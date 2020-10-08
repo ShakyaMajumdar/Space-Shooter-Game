@@ -1,12 +1,7 @@
-------------------------------------------------------------------------
-This is the project README file. Here, you should describe your project.
-Tell the reader (someone who does not know anything about this project)
-all he/she needs to know. The comments should usually include at least:
-------------------------------------------------------------------------
-
-PROJECT TITLE:
-PURPOSE OF PROJECT:
-VERSION or DATE:
-HOW TO START THIS PROJECT:
-AUTHORS:
+PROJECT TITLE: Space Shooter Game
+VERSION or DATE: 8.10.2020 
+AUTHORS: Shakya Majumdar
 USER INSTRUCTIONS:
+  Open Game.jar
+  Click to shoot
+  Press WASD/Arrow Keys to move
