@@ -1,18 +1,21 @@
 import java.awt.*;
-class Player extends Gameplay
+class Player
 {
+    static int PANEL_WIDTH;
+    static int PANEL_HEIGHT;
+    static Image spaceshipImage;
+    static Gameplay imageObserver;
+    static int diameter = 75;
+    
     int x;
     int y;
     int velocityX;
-    int velocityY;
-    public int diameter;  
+    int velocityY; 
     
     public Player()
     {        
-        diameter = 50;
-        x = super.PANEL_WIDTH/2-diameter;
-        y = super.PANEL_HEIGHT/2-diameter;     
-        super.spaceshipImage = super.spaceshipImage.getScaledInstance(diameter+10,diameter+10,Image.SCALE_DEFAULT);
+        x = PANEL_WIDTH/2-diameter;
+        y = PANEL_HEIGHT/2-diameter;     
         velocityX = 0;
         velocityY = 0;
     }
@@ -25,6 +28,6 @@ class Player extends Gameplay
     
     public void draw(Graphics g)
     {
-        g.drawImage(super.spaceshipImage, x-diameter/2, y-diameter/2, this);
+        g.drawImage(spaceshipImage, x-diameter/2, y-diameter/2, imageObserver);
     }
 }
