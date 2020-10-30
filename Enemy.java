@@ -1,6 +1,10 @@
 import java.awt.*;
-class Enemy extends Gameplay
+class Enemy
 {
+    static int PANEL_WIDTH;
+    static int PANEL_HEIGHT;
+    static Image enemyImage;
+    static Gameplay imageObserver;
     
     double x;
     double y;
@@ -50,6 +54,6 @@ class Enemy extends Gameplay
     
     public void draw(Graphics g)
     {        
-        g.drawImage(image, (int)Math.floor(x)-diameter/2, (int)Math.floor(y)-diameter/2, this);
+        g.drawImage(image, (int)Math.floor(x)-diameter/2, (int)Math.floor(y)-diameter/2, imageObserver);
     }
 }
