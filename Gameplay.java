@@ -13,7 +13,7 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
     public final int PANEL_WIDTH ;
     public final int PANEL_HEIGHT; 
 
-    static Player player = new Player();
+    static Player player;
 
     static Projectile[] projectiles  = new Projectile[0];
     static Enemy[] enemies = new Enemy[0];
@@ -21,6 +21,7 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
     long timeLastEnemyCreated;
 
     boolean hasPainted = false;
+    boolean willShowInstructions;
     boolean gameOver;
     boolean mouseEnabled;
     boolean keyEnabled;
@@ -32,9 +33,6 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
     Image explosionGif;
 
     int framesSinceEnd = 0; 
-
-    @Override 
-    public void mouseEntered(MouseEvent e){}    
 
     @Override 
     public void mouseExited(MouseEvent e){}
@@ -51,7 +49,9 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
     Gameplay()
     {
         score = 0;
+        //hasPainted = false;
         gameOver = false;
+        willShowInstructions = true;
 
         timer = new Timer(1, this);
         timer.start();
@@ -66,12 +66,28 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
 
         backgroundImage = toolkit.getImage("files/background.JPG");
         backgroundImage = backgroundImage.getScaledInstance(PANEL_WIDTH, PANEL_HEIGHT, Image.SCALE_DEFAULT);
-        spaceshipImage = toolkit.getImage("files/spaceship2.JPG");
-        projectileImage = toolkit.getImage("files/projectile.JPG");
-        enemyImage = toolkit.getImage("files/comet.JPG");
+        spaceshipImage = toolkit.getImage("files/spaceship.png");
+        projectileImage = toolkit.getImage("files/projectile.png");
+        enemyImage = toolkit.getImage("files/comet.png");
         explosionGif = toolkit.getImage("files/explosion.gif");        
-        explosionGif = explosionGif.getScaledInstance(150, 150, Image.SCALE_DEFAULT);
-
+        explosionGif = explosionGif.getScaledInstance(150, 150, Image.SCALE_DEFAULT);  
+        
+        Enemy.PANEL_WIDTH = PANEL_WIDTH;
+        Enemy.PANEL_HEIGHT = PANEL_HEIGHT;
+        Enemy.enemyImage = enemyImage;
+        Enemy.imageObserver = this;
+        
+        Player.PANEL_WIDTH = PANEL_WIDTH;
+        Player.PANEL_HEIGHT = PANEL_HEIGHT;
+        Player.spaceshipImage = spaceshipImage.getScaledInstance(Player.diameter+10, Player.diameter+10,Image.SCALE_DEFAULT);
+        Player.imageObserver = this;
+        player = new Player();
+        
+        Projectile.PANEL_WIDTH = PANEL_WIDTH;
+        Projectile.PANEL_HEIGHT = PANEL_HEIGHT;
+        Projectile.projectileImage = projectileImage.getScaledInstance(Projectile.diameter+5, Projectile.diameter+5, Image.SCALE_DEFAULT);
+        Projectile.imageObserver = this;
+        
         addKeyListener(this);
         keyEnabled = true;
 
@@ -96,7 +112,7 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
         {System.out.println("Error");}
     }
 
-    /*
+    /**
      * Calculate distance between the points (x1, y1) and (x2, y2)
      */
     private double distance(double x1, double y1, double x2, double y2)
@@ -146,7 +162,7 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
         enemies = arr;
     }
 
-    /*
+    /**
      * Updates before each frame
      */
     @Override
@@ -193,7 +209,7 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
                     > projectiles[j].diameter/2 + enemies[i].diameter/2)
                         continue;                    
 
-                    playSound("icebreak2.wav");
+                    playSound("icebreak.wav");
 
                     if (enemies[i].diameter<30)         //shrink size if enemy is large
                     {
@@ -223,7 +239,7 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
 
             }
 
-            if (System.currentTimeMillis() - timeLastEnemyCreated>1500) //create new enemy every 1.5 seconds
+            if (System.currentTimeMillis() - timeLastEnemyCreated>1500 && enemies.length<10) //create new enemy every 1.5 seconds
             {
                 addEnemy(new Enemy(player.x, player.y));
                 timeLastEnemyCreated = System.currentTimeMillis();
@@ -234,7 +250,17 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
         }
     }
 
-    /*
+    
+    /**
+     * Change cursor to crosshair
+     */
+    @Override 
+    public void mouseEntered(MouseEvent e)
+    {
+        setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
+    }    
+    
+    /**
      * Create new projectile towards mouse's location
      */
     @Override
@@ -247,7 +273,7 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
         addProjectile(new Projectile(player.x, player.y, mouseX, mouseY));
     }        
 
-    /*
+    /**
      * Give player a velocity in a certain direction if WASD / Arrow Keys are pressed
      */
     @Override
@@ -270,7 +296,8 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
             }
             return;
         }
-
+        
+        
         if (e.getKeyCode() == KeyEvent.VK_RIGHT || e.getKeyCode() == KeyEvent.VK_D)     //move right
             player.velocityX = 5;        
         if (e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_A)      //move left
@@ -292,7 +319,9 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
     public void paint(Graphics g)
     {     
         hasPainted = true;
-
+        
+        g.drawImage(backgroundImage, 0,0,this); 
+        
         if (framesSinceEnd>25)  //25 frames are for explosion gif and sound to complete 
         {
             // UI for restart
@@ -334,7 +363,6 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
             return;
         }
 
-        g.drawImage(backgroundImage, 0,0,this); 
 
         g.setColor(Color.white);g.setFont(new Font("TimesRoman", Font.PLAIN, 24)); 
         g.drawString("Score: "+score, 10, 30);        
@@ -344,7 +372,7 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
         for (int i=0; i<enemies.length;i++)
             enemies[i].draw(g);
 
-        if (!gameOver)  player.draw(g);
+        if (!gameOver)  player.draw(g);        
         else
         {            
             mouseEnabled = false;
