@@ -22,11 +22,12 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
     long timeLastEnemyCreated;
 
     boolean hasPainted = false;
-    boolean willShowInstructions;
+    boolean showingInstructions;
     boolean gameOver;
     boolean mouseEnabled;
     boolean keyEnabled;
 
+    Image instructionsImage;
     Image backgroundImage;
     Image spaceshipSprite;
     Image projectileSprite;
@@ -54,7 +55,7 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
     Gameplay() {
         score = 0;
         gameOver = false;
-        willShowInstructions = true;
+        showingInstructions = true;
 
         timer = new Timer(1, this);
         timer.start();
@@ -67,6 +68,9 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
         PANEL_WIDTH = (int) screenSize.getWidth();
         PANEL_HEIGHT = (int) screenSize.getHeight();
 
+        // Get and scale required images
+
+        instructionsImage = toolkit.getImage("files/instructions.JPG");
         backgroundImage = toolkit.getImage("files/background.JPG");
         backgroundImage = backgroundImage.getScaledInstance(PANEL_WIDTH, PANEL_HEIGHT, Image.SCALE_DEFAULT);
         spaceshipSprite = toolkit.getImage("files/spaceship.png");
@@ -82,13 +86,21 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
 
         Player.PANEL_WIDTH = PANEL_WIDTH;
         Player.PANEL_HEIGHT = PANEL_HEIGHT;
-        Player.spaceshipImage = spaceshipSprite.getScaledInstance(Player.diameter + 10, Player.diameter + 10, Image.SCALE_DEFAULT);
+        Player.spaceshipImage = spaceshipSprite.getScaledInstance(
+                Player.diameter + 10,
+                Player.diameter + 10,
+                Image.SCALE_DEFAULT
+        );
         Player.imageObserver = this;
         player = new Player();
 
         Projectile.PANEL_WIDTH = PANEL_WIDTH;
         Projectile.PANEL_HEIGHT = PANEL_HEIGHT;
-        Projectile.projectileImage = projectileSprite.getScaledInstance(Projectile.diameter + 5, Projectile.diameter + 5, Image.SCALE_DEFAULT);
+        Projectile.projectileImage = projectileSprite.getScaledInstance(
+                Projectile.diameter + 5,
+                Projectile.diameter + 5,
+                Image.SCALE_DEFAULT
+        );
         Projectile.imageObserver = this;
 
         addKeyListener(this);
@@ -117,7 +129,7 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
      * Calculate distance between the points (x1, y1) and (x2, y2)
      */
     private double distance(double x1, double y1, double x2, double y2) {
-        return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        return Math.hypot(x2 - x1, y2 - y1);
     }
 
 
@@ -128,11 +140,14 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
     public void actionPerformed(ActionEvent e) {
         timer.start();
 
+        if (showingInstructions) {
+            repaint();
+            hasPainted = false;
+        }
         if (gameOver) return;
 
-        if (hasPainted) //ensures it is updated only once per frame
-        {
-
+        if (hasPainted) {
+            //ensures it is updated only once per frame
             player.update();
 
             for (int i = 0; i < projectiles.size(); i++) {
@@ -142,9 +157,11 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
                 if (projectiles.get(i).x < 0 ||
                         projectiles.get(i).x > PANEL_WIDTH ||
                         projectiles.get(i).y < 0 ||
-                        projectiles.get(i).y > PANEL_HEIGHT)   //remove projectile if it leaves screen
+                        projectiles.get(i).y > PANEL_HEIGHT) {
+                    //remove projectile if it leaves screen
                     projectiles.remove(i);
                     i--;    // To compensate for decrease in indices by List.remove
+                }
             }
 
             i:
@@ -153,31 +170,35 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
                 if (enemies.get(i).x < 0 ||
                         enemies.get(i).x > PANEL_WIDTH ||
                         enemies.get(i).y < 0 ||
-                        enemies.get(i).y > PANEL_HEIGHT)   //remove enemy if it leaves screen
-                {
+                        enemies.get(i).y > PANEL_HEIGHT) {
+                    //remove enemy if it leaves screen
                     enemies.remove(i);
                     i--;    // To compensate for decrease in indices by List.remove
                     continue;
                 }
 
-                for (int j = 0; j < projectiles.size(); j++) //check for collisions with each projectile
-                {
+                for (int j = 0; j < projectiles.size(); j++) {
+                    //check for collisions with each projectile
                     if (distance(projectiles.get(j).x, projectiles.get(j).y, enemies.get(i).x, enemies.get(i).y)
                             > Projectile.diameter / 2.0 + enemies.get(i).diameter / 2.0)
                         continue;
 
                     playSound("icebreak.wav");
 
-                    if (enemies.get(i).diameter < 30)         //shrink size if enemy is large
-                    {
+                    if (enemies.get(i).diameter < 30) {
+                        //shrink size if enemy is large
                         score += 100;
                         enemies.remove(i);
                         i--;
-                    } else                                //destroy if enemy is large
-                    {
+                    } else {
+                        //destroy if enemy is small
                         score += 50;
                         enemies.get(i).diameter -= 15;
-                        enemies.get(i).image = enemySprite.getScaledInstance(enemies.get(i).diameter, enemies.get(i).diameter, Image.SCALE_DEFAULT);
+                        enemies.get(i).image = enemySprite.getScaledInstance(
+                                enemies.get(i).diameter,
+                                enemies.get(i).diameter,
+                                Image.SCALE_DEFAULT
+                        );
                     }
 
                     projectiles.remove(j);
@@ -186,8 +207,8 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
                 }
 
                 if (distance(player.x, player.y, enemies.get(i).x, enemies.get(i).y)
-                        < Player.diameter / 2.0 + enemies.get(i).diameter / 2.0)    //set game over if any enemy collides with player
-                {
+                        < Player.diameter / 2.0 + enemies.get(i).diameter / 2.0) {
+                    //set game over if any enemy collides with player
                     enemies.remove(i);
                     gameOver = true;
                     break;
@@ -197,8 +218,8 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
 
             }
 
-            if (System.currentTimeMillis() - timeLastEnemyCreated > 1500 && enemies.size() < 10) //create new enemy every 1.5 seconds
-            {
+            if (System.currentTimeMillis() - timeLastEnemyCreated > 1500 && enemies.size() < 10) {
+                //create new enemy every 1.5 seconds
                 enemies.add(new Enemy(player.x, player.y));
                 timeLastEnemyCreated = System.currentTimeMillis();
             }
@@ -222,6 +243,9 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
      */
     @Override
     public void mouseClicked(MouseEvent e) {
+        if (showingInstructions) {
+            showingInstructions = false;
+        }
         if (!mouseEnabled) return;
         int mouseX = e.getX();
         int mouseY = e.getY();
@@ -235,8 +259,8 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
     @Override
     public void keyPressed(KeyEvent e) {
         if (!keyEnabled) {
-            if (e.getKeyCode() == KeyEvent.VK_ENTER) //restart game
-            {
+            if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                //restart game
                 score = 0;
                 gameOver = false;
                 framesSinceEnd = 0;
@@ -262,6 +286,9 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
             player.velocityY = -5;
     }
 
+    /**
+     * Reset velocities when keys are released
+     */
     @Override
     public void keyReleased(KeyEvent e) {
         //reset velocities when keys are released
@@ -269,71 +296,79 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
         player.velocityY = 0;
     }
 
+    /**
+     * Render frame
+     */
     public void paint(Graphics g) {
-        hasPainted = true;
+        if (showingInstructions) {
+            int imageX = PANEL_WIDTH / 2 - instructionsImage.getWidth(this) / 2;
+            int imageY = PANEL_HEIGHT / 2 - instructionsImage.getHeight(this) / 2;
+            g.drawImage(instructionsImage, imageX, imageY, this);
+            hasPainted = true;
+        } else {
+            hasPainted = true;
 
-        g.drawImage(backgroundImage, 0, 0, this);
+            g.drawImage(backgroundImage, 0, 0, this);
 
-        if (framesSinceEnd > 25)  //25 frames are for explosion gif and sound to complete
-        {
-            // UI for restart
+            if (framesSinceEnd > 25) {
+                // 25 frames are for explosion gif and sound to complete
+                // UI for restart
 
-            g.setColor(Color.lightGray);
-            Rectangle container = new Rectangle(PANEL_WIDTH / 2 - 250, PANEL_HEIGHT / 2 - 150, 500, 300);
-            g.fillRect(container.x, container.y, container.width, container.height);
+                g.setColor(Color.lightGray);
+                Rectangle container = new Rectangle(PANEL_WIDTH / 2 - 250, PANEL_HEIGHT / 2 - 150, 500, 300);
+                g.fillRect(container.x, container.y, container.width, container.height);
 
-            g.setColor(Color.black);
-            Font font1 = new Font("TimesRoman", Font.PLAIN, 30);
-            Font font2 = new Font("TimesRoman", Font.PLAIN, 64);
-            FontMetrics metrics1 = g.getFontMetrics(font1);
-            FontMetrics metrics2 = g.getFontMetrics(font2);
+                g.setColor(Color.black);
+                Font font1 = new Font("TimesRoman", Font.PLAIN, 30);
+                Font font2 = new Font("TimesRoman", Font.PLAIN, 64);
+                FontMetrics metrics1 = g.getFontMetrics(font1);
+                FontMetrics metrics2 = g.getFontMetrics(font2);
 
-            String text1 = "Game Over!";
-            int x1 = container.x + (container.width - metrics1.stringWidth(text1)) / 2;
-            int y1 = container.y + 50;
-            g.setFont(font1);
-            g.drawString(text1, x1, y1);
+                String text1 = "Game Over!";
+                int x1 = container.x + (container.width - metrics1.stringWidth(text1)) / 2;
+                int y1 = container.y + 50;
+                g.setFont(font1);
+                g.drawString(text1, x1, y1);
 
-            String text2 = Integer.toString(score);
-            int x2 = container.x + (container.width - metrics2.stringWidth(text2)) / 2;
-            int y2 = container.y + container.height / 2;
-            g.setFont(font2);
-            g.drawString(text2, x2, y2);
+                String text2 = Integer.toString(score);
+                int x2 = container.x + (container.width - metrics2.stringWidth(text2)) / 2;
+                int y2 = container.y + container.height / 2;
+                g.setFont(font2);
+                g.drawString(text2, x2, y2);
 
-            String text3 = "Points";
-            int x3 = container.x + (container.width - metrics1.stringWidth(text3)) / 2;
-            int y3 = y2 + metrics1.getHeight();
-            g.setFont(font1);
-            g.drawString(text3, x3, y3);
+                String text3 = "Points";
+                int x3 = container.x + (container.width - metrics1.stringWidth(text3)) / 2;
+                int y3 = y2 + metrics1.getHeight();
+                g.setFont(font1);
+                g.drawString(text3, x3, y3);
 
-            String text4 = "Press Enter to Play Again";
-            int x4 = container.x + (container.width - metrics1.stringWidth(text4)) / 2;
-            int y4 = container.y + container.height - 20;
-            g.setFont(font1);
-            g.drawString(text4, x4, y4);
+                String text4 = "Press Enter to Play Again";
+                int x4 = container.x + (container.width - metrics1.stringWidth(text4)) / 2;
+                int y4 = container.y + container.height - 20;
+                g.setFont(font1);
+                g.drawString(text4, x4, y4);
 
-            return;
+                return;
+            }
+
+            g.setColor(Color.white);
+            g.setFont(new Font("TimesRoman", Font.PLAIN, 24));
+            g.drawString("Score: " + score, 10, 30);
+
+            for (Projectile projectile : projectiles) projectile.draw(g);
+            for (Enemy enemy : enemies) enemy.draw(g);
+
+            if (!gameOver) player.draw(g);
+            else {
+                mouseEnabled = false;
+                keyEnabled = false;
+
+                g.drawImage(backgroundImage, 0, 0, this);         //clear all projectiles and enemies
+                g.drawImage(explosionGif, player.x - 75, player.y - 75, this);
+                playSound("explosion.wav");
+                framesSinceEnd++;
+            }
+            g.dispose();
         }
-
-
-        g.setColor(Color.white);
-        g.setFont(new Font("TimesRoman", Font.PLAIN, 24));
-        g.drawString("Score: " + score, 10, 30);
-
-        for (Projectile projectile : projectiles) projectile.draw(g);
-        for (Enemy enemy : enemies) enemy.draw(g);
-
-        if (!gameOver) player.draw(g);
-        else {
-            mouseEnabled = false;
-            keyEnabled = false;
-
-            g.drawImage(backgroundImage, 0, 0, this);         //clear all projectiles and enemies
-            g.drawImage(explosionGif, player.x - 75, player.y - 75, this);
-            playSound("explosion.wav");
-            framesSinceEnd++;
-
-        }
-        g.dispose();
     }
 }
