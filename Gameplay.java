@@ -3,6 +3,8 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.sound.sampled.*;
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
 class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListener {
     private int score;
@@ -14,8 +16,8 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
 
     static Player player;
 
-    static Projectile[] projectiles = new Projectile[0];
-    static Enemy[] enemies = new Enemy[0];
+    static List<Projectile> projectiles = new ArrayList<>();
+    static List<Enemy> enemies = new ArrayList<>();
 
     long timeLastEnemyCreated;
 
@@ -26,9 +28,9 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
     boolean keyEnabled;
 
     Image backgroundImage;
-    Image spaceshipImage;
-    Image projectileImage;
-    Image enemyImage;
+    Image spaceshipSprite;
+    Image projectileSprite;
+    Image enemySprite;
     Image explosionGif;
 
     int framesSinceEnd = 0;
@@ -51,7 +53,6 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
 
     Gameplay() {
         score = 0;
-        //hasPainted = false;
         gameOver = false;
         willShowInstructions = true;
 
@@ -68,26 +69,26 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
 
         backgroundImage = toolkit.getImage("files/background.JPG");
         backgroundImage = backgroundImage.getScaledInstance(PANEL_WIDTH, PANEL_HEIGHT, Image.SCALE_DEFAULT);
-        spaceshipImage = toolkit.getImage("files/spaceship.png");
-        projectileImage = toolkit.getImage("files/projectile.png");
-        enemyImage = toolkit.getImage("files/comet.png");
+        spaceshipSprite = toolkit.getImage("files/spaceship.png");
+        projectileSprite = toolkit.getImage("files/projectile.png");
+        enemySprite = toolkit.getImage("files/comet.png");
         explosionGif = toolkit.getImage("files/explosion.gif");
         explosionGif = explosionGif.getScaledInstance(150, 150, Image.SCALE_DEFAULT);
 
         Enemy.PANEL_WIDTH = PANEL_WIDTH;
         Enemy.PANEL_HEIGHT = PANEL_HEIGHT;
-        Enemy.enemyImage = enemyImage;
+        Enemy.enemyImage = enemySprite;
         Enemy.imageObserver = this;
 
         Player.PANEL_WIDTH = PANEL_WIDTH;
         Player.PANEL_HEIGHT = PANEL_HEIGHT;
-        Player.spaceshipImage = spaceshipImage.getScaledInstance(Player.diameter + 10, Player.diameter + 10, Image.SCALE_DEFAULT);
+        Player.spaceshipImage = spaceshipSprite.getScaledInstance(Player.diameter + 10, Player.diameter + 10, Image.SCALE_DEFAULT);
         Player.imageObserver = this;
         player = new Player();
 
         Projectile.PANEL_WIDTH = PANEL_WIDTH;
         Projectile.PANEL_HEIGHT = PANEL_HEIGHT;
-        Projectile.projectileImage = projectileImage.getScaledInstance(Projectile.diameter + 5, Projectile.diameter + 5, Image.SCALE_DEFAULT);
+        Projectile.projectileImage = projectileSprite.getScaledInstance(Projectile.diameter + 5, Projectile.diameter + 5, Image.SCALE_DEFAULT);
         Projectile.imageObserver = this;
 
         addKeyListener(this);
@@ -119,45 +120,6 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
         return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
     }
 
-    private void addProjectile(Projectile x) {
-        Projectile[] arr = new Projectile[projectiles.length + 1];
-        System.arraycopy(projectiles, 0, arr, 0, projectiles.length);
-        arr[projectiles.length] = x;
-        projectiles = arr;
-    }
-
-    private void removeProjectile(int index) {
-        Projectile[] arr = new Projectile[projectiles.length - 1];
-        int f = 0;
-        for (int i = 0; i < projectiles.length; i++) {
-            if (i == index) {
-                f = 1;
-                continue;
-            }
-            arr[i - f] = projectiles[i];
-        }
-        projectiles = arr;
-    }
-
-    private void addEnemy(Enemy x) {
-        Enemy[] arr = new Enemy[enemies.length + 1];
-        System.arraycopy(enemies, 0, arr, 0, enemies.length);
-        arr[enemies.length] = x;
-        enemies = arr;
-    }
-
-    private void removeEnemy(int index) {
-        Enemy[] arr = new Enemy[enemies.length - 1];
-        int f = 0;
-        for (int i = 0; i < enemies.length; i++) {
-            if (i == index) {
-                f = 1;
-                continue;
-            }
-            arr[i - f] = enemies[i];
-        }
-        enemies = arr;
-    }
 
     /**
      * Updates before each frame
@@ -168,73 +130,76 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
 
         if (gameOver) return;
 
-        if (hasPainted)//ensures it is updated only once per frame
+        if (hasPainted) //ensures it is updated only once per frame
         {
 
             player.update();
 
-            for (int i = 0; i < projectiles.length; i++) {
+            for (int i = 0; i < projectiles.size(); i++) {
 
-                projectiles[i].update();
+                projectiles.get(i).update();
 
-                if (projectiles[i].x < 0 ||
-                        projectiles[i].x > PANEL_WIDTH ||
-                        projectiles[i].y < 0 ||
-                        projectiles[i].y > PANEL_HEIGHT)   //remove projectile if it leaves screen
-                    removeProjectile(i);
-
+                if (projectiles.get(i).x < 0 ||
+                        projectiles.get(i).x > PANEL_WIDTH ||
+                        projectiles.get(i).y < 0 ||
+                        projectiles.get(i).y > PANEL_HEIGHT)   //remove projectile if it leaves screen
+                    projectiles.remove(i);
+                    i--;    // To compensate for decrease in indices by List.remove
             }
 
             i:
-            for (int i = 0; i < enemies.length; i++) {
+            for (int i = 0; i < enemies.size(); i++) {
 
-                if (enemies[i].x < 0 ||
-                        enemies[i].x > PANEL_WIDTH ||
-                        enemies[i].y < 0 ||
-                        enemies[i].y > PANEL_HEIGHT)   //remove enemy if it leaves screen
+                if (enemies.get(i).x < 0 ||
+                        enemies.get(i).x > PANEL_WIDTH ||
+                        enemies.get(i).y < 0 ||
+                        enemies.get(i).y > PANEL_HEIGHT)   //remove enemy if it leaves screen
                 {
-                    removeEnemy(i);
+                    enemies.remove(i);
+                    i--;    // To compensate for decrease in indices by List.remove
                     continue;
                 }
 
-                for (int j = 0; j < projectiles.length; j++) //check for collisions with each projectile
+                for (int j = 0; j < projectiles.size(); j++) //check for collisions with each projectile
                 {
-                    if (distance(projectiles[j].x, projectiles[j].y, enemies[i].x, enemies[i].y)
-                            > Projectile.diameter / 2.0 + enemies[i].diameter / 2.0)
+                    if (distance(projectiles.get(j).x, projectiles.get(j).y, enemies.get(i).x, enemies.get(i).y)
+                            > Projectile.diameter / 2.0 + enemies.get(i).diameter / 2.0)
                         continue;
 
                     playSound("icebreak.wav");
 
-                    if (enemies[i].diameter < 30)         //shrink size if enemy is large
+                    if (enemies.get(i).diameter < 30)         //shrink size if enemy is large
                     {
                         score += 100;
-                        removeEnemy(i);
+                        enemies.remove(i);
+                        i--;
                     } else                                //destroy if enemy is large
                     {
                         score += 50;
-                        enemies[i].diameter -= 15;
-                        enemies[i].image = enemyImage.getScaledInstance(enemies[i].diameter, enemies[i].diameter, Image.SCALE_DEFAULT);
+                        enemies.get(i).diameter -= 15;
+                        enemies.get(i).image = enemySprite.getScaledInstance(enemies.get(i).diameter, enemies.get(i).diameter, Image.SCALE_DEFAULT);
                     }
 
-                    removeProjectile(j);
+                    projectiles.remove(j);
+
                     continue i; //move on to next enemy without any further checks
                 }
 
-                if (distance(player.x, player.y, enemies[i].x, enemies[i].y)
-                        < Player.diameter / 2.0 + enemies[i].diameter / 2.0)    //set game over if any enemy collides with player
+                if (distance(player.x, player.y, enemies.get(i).x, enemies.get(i).y)
+                        < Player.diameter / 2.0 + enemies.get(i).diameter / 2.0)    //set game over if any enemy collides with player
                 {
-                    removeEnemy(i);
+                    enemies.remove(i);
                     gameOver = true;
                     break;
                 }
 
-                enemies[i].update();
+                enemies.get(i).update();
 
             }
 
-            if (System.currentTimeMillis() - timeLastEnemyCreated > 1500 && enemies.length < 10) //create new enemy every 1.5 seconds
+            if (System.currentTimeMillis() - timeLastEnemyCreated > 1500 && enemies.size() < 10) //create new enemy every 1.5 seconds
             {
-                addEnemy(new Enemy(player.x, player.y));
+                enemies.add(new Enemy(player.x, player.y));
                 timeLastEnemyCreated = System.currentTimeMillis();
             }
 
@@ -261,7 +226,7 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
         int mouseX = e.getX();
         int mouseY = e.getY();
         playSound("laser.wav");
-        addProjectile(new Projectile(player.x, player.y, mouseX, mouseY));
+        projectiles.add(new Projectile(player.x, player.y, mouseX, mouseY));
     }
 
     /**
@@ -278,8 +243,8 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
                 hasPainted = false;
                 mouseEnabled = true;
                 keyEnabled = true;
-                projectiles = new Projectile[0];
-                enemies = new Enemy[0];
+                projectiles = new ArrayList<>();
+                enemies = new ArrayList<>();
                 player = new Player();
                 timeLastEnemyCreated = System.currentTimeMillis();
             }
