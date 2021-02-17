@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListener {
-    private int score;
+    private int score; 
 
     private final Timer timer;
 
@@ -315,7 +315,12 @@ class Gameplay extends JPanel implements MouseListener, ActionListener, KeyListe
                 // UI for restart
 
                 g.setColor(Color.lightGray);
-                Rectangle container = new Rectangle(PANEL_WIDTH / 2 - 250, PANEL_HEIGHT / 2 - 150, 500, 300);
+                Rectangle container = new Rectangle(
+                        PANEL_WIDTH / 2 - 250,
+                        PANEL_HEIGHT / 2 - 150,
+                        500,
+                        300
+                );
                 g.fillRect(container.x, container.y, container.width, container.height);
 
                 g.setColor(Color.black);
